@@ -6,14 +6,18 @@ from app.core.config import settings
 from app.core.database import init_db
 import app.models  # Registra los modelos en SQLModel antes de init_db()
 from app.api.v1.api import api_router
+from app.core.initial_data import init_initial_data
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Evento de Inicio (Startup): Crea las tablas en PostgreSQL si no existen
     await init_db()
+    await init_initial_data()
     yield
     # Evento de Cierre (Shutdown): Limpieza de recursos si fuera necesario
+
+    # Aquí puedes agregar lógica de limpieza si es necesario
 
 
 app = FastAPI(
