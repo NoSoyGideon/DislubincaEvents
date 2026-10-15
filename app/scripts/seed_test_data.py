@@ -20,6 +20,8 @@ Limpiar Datos de Prueba Ejecutas en tu terminal:
 '''
 
 
+
+
 async def seed_test_data():
     """Inserta clientes y SKUs de prueba."""
     async with async_session_maker() as db:

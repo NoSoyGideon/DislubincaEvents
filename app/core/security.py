@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union, Optional
 from jose import jwt
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
 from app.core.config import settings
 
-# Contexto de encriptación con Bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Inicializa el gestor de hashing usando pwdlib con Bcrypt
+pwd_context = PasswordHash((BcryptHasher(),))
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica si la contraseña ingresada coincide con el hash guardado."""
@@ -18,11 +19,11 @@ def get_password_hash(password: str) -> str:
 def create_access_token(
     subject: Union[str, Any], expires_delta: Optional[timedelta] = None
 ) -> str:
-    """Genera un Token JWT firmado con expiration date."""
+    """Genera un Token JWT firmado con fecha de expiración."""
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     
