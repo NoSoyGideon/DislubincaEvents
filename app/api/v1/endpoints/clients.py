@@ -1,3 +1,5 @@
+from datetime import date
+from tkinter import EventType
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api import deps
 from app.core.database import get_db
+from app.models.event import Event
 from app.models.user import User
 from app.models.client import Client, ClientBaseResource
 from app.models.route import Route
@@ -233,6 +236,27 @@ async def update_client(
         client.phone = client_in.phone
     if client_in.is_active is not None:
         client.is_active = client_in.is_active
+
+
+
+# (2) Si se edita la fecha de aniversario oficial, actualizar también los eventos físicos reprogramados/creados del año activo
+    if client_in.anniversary_date is not None and client_in.anniversary_date != client.anniversary_date:
+        client.anniversary_date = client_in.anniversary_date
+        today = date.today()
+        new_official_date = date(today.year, client_in.anniversary_date.month, client_in.anniversary_date.day)
+        
+        # Buscar eventos físicos de este año que no hayan sido reprogramados manualmente a otra fecha
+        res_events = await db.execute(
+            select(Event).where(
+                Event.client_id == client.id,
+                Event.year == today.year,
+                Event.event_type == EventType.ANIVERSARIO.value,
+                Event.status != "REPROGRAMADO"
+            )
+        )
+        for ev in res_events.scalars().all():
+            ev.event_date = new_official_date
+            db.add(ev)
 
     db.add(client)
     await db.commit()
